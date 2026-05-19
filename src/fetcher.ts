@@ -88,6 +88,13 @@ export async function getDomainIntelligence(rawInput: string): Promise<DomainInt
   const emailProvider = dnsResult.email_stack.provider;
   if (emailProvider) {
     scrapeResult.tech_stack.email_provider = emailProvider;
+    // Recompute confidence now that email provider is known.
+    // Email provider from live MX resolution counts as one high-confidence signal.
+    const highConfidenceCount = scrapeResult.tech_stack.detected.filter(t => t.confidence >= 85).length;
+    scrapeResult.tech_stack.confidence =
+      (highConfidenceCount + 1) >= 3 ? "high" :
+      (highConfidenceCount + 1) >= 1 ? "medium" :
+      "low";
   }
 
   const intel: DomainIntelligence = {
