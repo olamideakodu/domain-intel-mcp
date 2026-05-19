@@ -4,6 +4,9 @@
   "description": "One-call domain intelligence: tech stack, DNS, SSL, WHOIS, subdomains, social profiles — normalized into a single typed object.",
   "type": "module",
   "main": "dist/server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/server.ts",

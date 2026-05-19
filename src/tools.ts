@@ -243,13 +243,13 @@ export const TOOLS = [
     _meta: {
       surface: "both",
       queryEligible: true,
-      latencyClass: "fast",
+      latencyClass: "slow",
       pricing: { executeUsd: "0.0015" },
       rateLimit: {
         maxRequestsPerMinute: 30,
         cooldownMs: 2000,
         maxConcurrency: 5,
-        notes: "Cold fetches hit 5 upstream sources in parallel. Respect rate limits on crt.sh and RDAP.",
+        notes: "Cold fetches hit 5 upstream sources in parallel (DNS, TLS, crt.sh, RDAP, HTTP). 8–15s cold, sub-200ms warm (24h TTL cache). Respect rate limits on crt.sh and RDAP.",
       },
     },
     inputSchema: {
@@ -258,7 +258,7 @@ export const TOOLS = [
         domain: {
           type: "string",
           description: "Domain to analyse. Accepts any format: 'stripe.com', 'www.stripe.com', 'https://stripe.com/products'",
-          default: "stripe.com",
+          default: "example.com",
           examples: ["stripe.com", "vercel.com", "notion.so", "linear.app", "supabase.com"],
         },
       },
@@ -298,7 +298,7 @@ export const TOOLS = [
         domain: {
           type: "string",
           description: "Domain to fingerprint",
-          default: "notion.so",
+          default: "example.com",
           examples: ["notion.so", "linear.app", "loom.com", "figma.com", "retool.com"],
         },
       },
@@ -347,7 +347,7 @@ export const TOOLS = [
         domain: {
           type: "string",
           description: "Domain to look up DNS records for",
-          default: "github.com",
+          default: "example.com",
           examples: ["github.com", "cloudflare.com", "vercel.com", "anthropic.com"],
         },
       },
@@ -396,7 +396,7 @@ export const TOOLS = [
         domain: {
           type: "string",
           description: "Root domain to enumerate subdomains for",
-          default: "stripe.com",
+          default: "example.com",
           examples: ["stripe.com", "vercel.com", "linear.app", "supabase.com"],
         },
       },

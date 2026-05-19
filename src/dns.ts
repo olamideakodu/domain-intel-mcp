@@ -1,4 +1,4 @@
-import { promises as dns } from "dns";
+import { promises as dns } from "node:dns";
 import type { DnsResult, MxRecord, EmailStack } from "./types.js";
 import { MX_PROVIDERS } from "./fingerprints.js";
 

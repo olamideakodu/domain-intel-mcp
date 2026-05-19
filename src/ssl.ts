@@ -1,4 +1,4 @@
-import * as tls from "tls";
+import * as tls from "node:tls";
 import type { SslResult, SubdomainResult, SubdomainEntry } from "./types.js";
 
 // ── TLS certificate fetch ──────────────────────────────────────────────────
@@ -131,7 +131,7 @@ export async function fetchSubdomains(domain: string): Promise<SubdomainResult> 
   try {
     const url = `https://crt.sh/?q=%.${domain}&output=json`;
     const res = await fetch(url, {
-      signal: AbortSignal.timeout(8_000),
+      signal: AbortSignal.timeout(5_000),
       headers: { "Accept": "application/json" },
     });
 

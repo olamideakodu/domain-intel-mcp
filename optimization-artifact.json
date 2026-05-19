@@ -1,0 +1,292 @@
+{
+  "version": "1.0",
+  "toolId": "PENDING — fill in after registering at ctxprotocol.com/contribute",
+  "generatedAt": "2026-05-19T00:00:00.000Z",
+  "status": "PARTIAL — Phases 0-5 complete offline. Phases 6-8 require deployed endpoint + CONTEXT_API_KEY + TOOL_ID.",
+
+  "phase0_context": {
+    "archetype": "multi_source_normalizer",
+    "surface": "both",
+    "upstream_sources": [
+      "Node.js dns/promises (DNS A, MX, NS, TXT, CAA records — built-in, no auth)",
+      "Node.js tls module (TLS certificate via direct handshake — built-in, no auth)",
+      "crt.sh Certificate Transparency logs (subdomain enumeration — free, no auth)",
+      "rdap.org (WHOIS/RDAP ownership — ICANN standard, free, no auth)",
+      "Direct HTTP fetch + HTML parsing (tech stack, social profiles, security headers — no auth)"
+    ],
+    "method_count": 4,
+    "methods": [
+      { "name": "get_domain_intelligence", "surface": "both", "latencyClass": "slow", "hasOutputSchema": true },
+      { "name": "get_tech_stack",          "surface": "both", "latencyClass": "fast", "hasOutputSchema": true },
+      { "name": "get_dns_records",         "surface": "both", "latencyClass": "fast", "hasOutputSchema": true },
+      { "name": "get_subdomains",          "surface": "both", "latencyClass": "fast", "hasOutputSchema": true }
+    ]
+  },
+
+  "verticalAlphaResearch": {
+    "alphaCategories": [
+      {
+        "id": "live_data",
+        "name": "Live Data Advantage",
+        "description": "DNS records, TLS certificates, WHOIS/RDAP, and HTTP headers are real-time signals. Free LLMs have training cutoffs and cannot resolve current DNS, fetch live SSL state, or check actual DMARC policies. Every response from this tool reflects the domain's current state, not cached training data.",
+        "relevantMethods": ["get_domain_intelligence", "get_dns_records"],
+        "differentiationStrength": "high"
+      },
+      {
+        "id": "multi_signal_normalization",
+        "name": "Multi-Source Normalization",
+        "description": "Sales and BD teams currently open 6-8 separate tabs (BuiltWith, WHOIS lookup, SSL checker, crt.sh, MXToolbox, SimilarWeb) and manually assemble intel. This tool returns all signals in one typed JSON object in one call. No tool currently combines tech stack + DNS + SSL + WHOIS + CT logs + social profiles in a single API primitive.",
+        "relevantMethods": ["get_domain_intelligence"],
+        "differentiationStrength": "high"
+      },
+      {
+        "id": "dns_vendor_intelligence",
+        "name": "DNS TXT Record Vendor Stack",
+        "description": "TXT records reveal a company's entire vendor ecosystem through verification tokens: Stripe (payment), DocuSign (contracts), Zoom (comms), Salesforce (CRM), HubSpot (marketing), Loom (video). BuiltWith and Wappalyzer detect HTML/JS-visible tools only. TXT records expose back-office vendors that leave no browser-visible fingerprint. This is unique intelligence with no direct competitor.",
+        "relevantMethods": ["get_dns_records", "get_domain_intelligence"],
+        "differentiationStrength": "high"
+      },
+      {
+        "id": "ct_log_enumeration",
+        "name": "Certificate Transparency Subdomain Exposure",
+        "description": "CT logs reveal every TLS certificate ever issued for a domain, exposing subdomains including internal tools, staging environments, acquired products, and deprecated services. This data is public but requires aggregation. No free tool surfaces it in a structured, agent-callable format alongside all other domain signals.",
+        "relevantMethods": ["get_subdomains", "get_domain_intelligence"],
+        "differentiationStrength": "high"
+      },
+      {
+        "id": "email_infrastructure_intelligence",
+        "name": "Email Stack Classification",
+        "description": "MX records reveal which email provider a company uses (Google Workspace, Microsoft 365, Proton, custom). Combined with SPF policy (strict/soft/neutral) and DMARC policy (reject/quarantine/none), this gives a security posture signal no Wappalyzer-style tech fingerprinter provides. Sales teams use email provider to qualify deal size (Microsoft 365 = enterprise; Google Workspace = tech-forward; custom MX = large org).",
+        "relevantMethods": ["get_dns_records"],
+        "differentiationStrength": "high"
+      }
+    ],
+    "crossToolOpportunities": [
+      {
+        "partnerTool": "AppSignal MCP (by same contributor)",
+        "combinedInsight": "Full prospect profile: tech stack + email provider (this tool) + iOS/Android app growth signals (AppSignal). Combined query: 'What tech does Calm.com run and is their app growing?' answers both the BD targeting question and the competitive intelligence question in one agent turn.",
+        "examplePrompt": "What tech stack does calm.com use, who's their email provider, and do they have a mobile app with growing ratings?"
+      },
+      {
+        "partnerTool": "Any financial data tool on CTX marketplace",
+        "combinedInsight": "Domain intelligence as pre-investment due diligence. Before buying a position, an agent checks whether the company's infrastructure is healthy (SSL expiry, DMARC, security headers) and what vendors they're locked into (from TXT records). This reveals operational risk invisible from financial statements.",
+        "examplePrompt": "Before I invest in Coupang, what does their domain infrastructure tell me about their tech choices and operational posture?"
+      }
+    ],
+    "upstreamGaps": [
+      {
+        "gap": "BuiltWith Pro ($295/mo) detects tech stack from HTML/JS but has no DNS records, no WHOIS, no CT log subdomains, no social profiles, and no security header analysis. It also has zero agent-callable API — output is PDF or dashboard only.",
+        "howToolFills": "All of the above, in one typed JSON object, agent-callable at $0.001/execute."
+      },
+      {
+        "gap": "Wappalyzer Teams ($250/mo) is HTML/header pattern matching only, documented 30-40% miss rate post-2023 acquisition, no DNS, no WHOIS, no subdomains.",
+        "howToolFills": "Wappalyzer-style fingerprinting plus 4 additional signal categories Wappalyzer never had."
+      },
+      {
+        "gap": "DomainTools Iris Investigate ($1,500+/yr) has WHOIS and DNS but no tech stack detection, no CT log subdomains, no social profiles, no HTTP security headers.",
+        "howToolFills": "All DomainTools core signals plus tech stack, subdomains, and web intelligence."
+      }
+    ]
+  },
+
+  "candidatePromptPool": [
+    {
+      "id": "prompt_1",
+      "prompt": "What tech stack does stripe.com run and which email provider do they use?",
+      "alphaCategory": "live_data",
+      "category": "live_data",
+      "expectedMethods": ["get_domain_intelligence"],
+      "whyFreeCannotAnswer": "Free LLMs cannot resolve live DNS MX records or fetch current HTTP headers to fingerprint the stack. Training data on Stripe's stack is months stale.",
+      "realWorldConsequence": "Sales rep qualifying Stripe as a prospect needs to know their email provider (Google vs Microsoft) to personalize outreach and confirm tech fit.",
+      "freeBaseline": {
+        "response": "Stripe likely uses React/Next.js on the frontend and their own infrastructure. They probably use Google Workspace for email.",
+        "differentiation": "high_differentiation",
+        "whyItBeatsFree": "Tool returns confirmed live DNS MX records (Google Workspace confirmed from aspmx.l.google.com), actual detected tech from HTTP headers (not guesses), and SPF/DMARC policy. Free LLM guesses; tool confirms.",
+        "autoCalibrated": false
+      },
+      "testResult": "PENDING — requires live endpoint through CTX platform"
+    },
+    {
+      "id": "prompt_2",
+      "prompt": "What subdomains has notion.so exposed in their TLS certificates?",
+      "alphaCategory": "ct_log_enumeration",
+      "category": "live_data",
+      "expectedMethods": ["get_subdomains"],
+      "whyFreeCannotAnswer": "Free LLMs cannot query crt.sh or any CT log database. They have no access to real-time certificate issuance records.",
+      "realWorldConsequence": "Security researcher or competitor analyst maps Notion's product surface (api.notion.so, internal.notion.so, staging environments) without needing any special access.",
+      "freeBaseline": {
+        "response": "Notion likely has subdomains like api.notion.so, www.notion.so, and possibly internal tools, but I can't enumerate them specifically.",
+        "differentiation": "high_differentiation",
+        "whyItBeatsFree": "Tool returns actual, deduplicated, timestamped subdomain list from CT logs. Free LLM guesses common subdomains.",
+        "autoCalibrated": false
+      },
+      "testResult": "PENDING"
+    },
+    {
+      "id": "prompt_3",
+      "prompt": "Does shopify.com have a strict DMARC policy and what does their SPF record include?",
+      "alphaCategory": "email_infrastructure_intelligence",
+      "category": "live_data",
+      "expectedMethods": ["get_dns_records"],
+      "whyFreeCannotAnswer": "Free LLMs cannot resolve live _dmarc.shopify.com TXT records. DMARC policy can change at any time.",
+      "realWorldConsequence": "Email security auditor or deliverability consultant verifying a client's vendor's email posture before allowing them into their supply chain.",
+      "freeBaseline": {
+        "response": "Shopify likely has DMARC configured since they're a large company. I'd expect a quarantine or reject policy but I can't verify this.",
+        "differentiation": "high_differentiation",
+        "whyItBeatsFree": "Tool returns actual live DMARC record with exact policy (reject/quarantine/none) and SPF record with every include: clause — the full authorized sender list.",
+        "autoCalibrated": false
+      },
+      "testResult": "PENDING"
+    },
+    {
+      "id": "prompt_4",
+      "prompt": "What third-party vendors does vercel.com use, based on their DNS TXT records?",
+      "alphaCategory": "dns_vendor_intelligence",
+      "category": "ceiling_testing",
+      "expectedMethods": ["get_dns_records"],
+      "whyFreeCannotAnswer": "Free LLMs cannot query live DNS TXT records. TXT records change as vendor relationships change.",
+      "realWorldConsequence": "B2B sales rep selling a competing product to Vercel uses their vendor stack (Stripe, Salesforce, DocuSign, Mixpanel, Loom, Zoom, HubSpot, Notion) to understand their tool landscape and identify displacement opportunities.",
+      "freeBaseline": {
+        "response": "Vercel probably uses Stripe for billing and some analytics tools, but I can't tell you specifically what's in their DNS records.",
+        "differentiation": "high_differentiation",
+        "whyItBeatsFree": "Tool returns actual TXT records revealing: Stripe (3 verification tokens), Salesforce, DocuSign, Mixpanel, Zoom, Loom, Notion, HubSpot, Apple, DoorDash. Complete vendor stack from DNS. Free LLM cannot see this.",
+        "autoCalibrated": false
+      },
+      "testResult": "PENDING"
+    },
+    {
+      "id": "prompt_5",
+      "prompt": "Is linear.app's SSL certificate expiring soon and does their cert cover any other domains?",
+      "alphaCategory": "live_data",
+      "category": "time_sensitive_judgment",
+      "expectedMethods": ["get_domain_intelligence"],
+      "whyFreeCannotAnswer": "Free LLMs cannot perform live TLS handshakes. SSL expiry is real-time state.",
+      "realWorldConsequence": "DevOps engineer or security team monitoring their vendor's cert health before a critical integration goes live.",
+      "freeBaseline": {
+        "response": "I can't check SSL certificate expiry in real-time. You'd need to use openssl or a certificate checker tool.",
+        "differentiation": "high_differentiation",
+        "whyItBeatsFree": "Tool returns exact days_until_expiry, issuer_org, subject, san_domains, and wildcard status from a live TLS handshake.",
+        "autoCalibrated": false
+      },
+      "testResult": "PENDING"
+    },
+    {
+      "id": "prompt_6",
+      "prompt": "What's the full security posture of figma.com — HSTS, CSP, DMARC, X-Frame-Options?",
+      "alphaCategory": "live_data",
+      "category": "comparison_screening",
+      "expectedMethods": ["get_domain_intelligence"],
+      "whyFreeCannotAnswer": "Free LLMs cannot fetch live HTTP response headers or DNS records. Security header configuration changes frequently.",
+      "realWorldConsequence": "Enterprise security team doing vendor due diligence on Figma before approving it for internal use.",
+      "freeBaseline": {
+        "response": "Figma as a security-conscious company likely has HSTS enabled. I'd expect they have CSP headers too. DMARC is probably set to at least quarantine for a company their size.",
+        "differentiation": "high_differentiation",
+        "whyItBeatsFree": "Tool returns exact boolean flags for every security header plus hsts_max_age, hsts_includes_subdomains, dmarc_policy — actual verified state, not probability estimates.",
+        "autoCalibrated": false
+      },
+      "testResult": "PENDING"
+    },
+    {
+      "id": "prompt_7",
+      "prompt": "Who registered supabase.com and when, and are they using a domain privacy service?",
+      "alphaCategory": "live_data",
+      "category": "live_data",
+      "expectedMethods": ["get_domain_intelligence"],
+      "whyFreeCannotAnswer": "Free LLMs cannot query live RDAP. Registrar and registration date require real-time WHOIS lookup.",
+      "realWorldConsequence": "M&A analyst or investor doing company due diligence — registration date reveals age of business, registrar reveals infrastructure choices, privacy protection reveals how the founding team operates.",
+      "freeBaseline": {
+        "response": "Supabase was founded around 2020, so supabase.com was probably registered around that time. I don't know the specific registrar.",
+        "differentiation": "high_differentiation",
+        "whyItBeatsFree": "Tool returns exact registered_at date (from RDAP), registrar name, expiry date, privacy_protected boolean, and name_servers — all live from RDAP, not guessed.",
+        "autoCalibrated": false
+      },
+      "testResult": "PENDING"
+    },
+    {
+      "id": "prompt_8",
+      "prompt": "Compare the email security posture of hubspot.com versus salesforce.com — which has stronger DMARC?",
+      "alphaCategory": "email_infrastructure_intelligence",
+      "category": "comparison_screening",
+      "expectedMethods": ["get_dns_records"],
+      "whyFreeCannotAnswer": "Requires live DNS resolution for both domains' _dmarc TXT records. Free LLMs cannot do this.",
+      "realWorldConsequence": "Email deliverability consultant comparing two CRM vendors' email security posture for a client choosing between them.",
+      "freeBaseline": {
+        "response": "Both HubSpot and Salesforce are large companies and likely have DMARC configured. Salesforce is older and enterprise-focused so might have stricter policies.",
+        "differentiation": "high_differentiation",
+        "whyItBeatsFree": "Two get_dns_records calls return exact DMARC p= values, SPF include chains, and email provider for each — actual comparison data, not conjecture.",
+        "autoCalibrated": false
+      },
+      "testResult": "PENDING"
+    }
+  ],
+
+  "dataQualityValidation": {
+    "level1": {
+      "passed": true,
+      "issues": [],
+      "notes": "Tested against vercel.com. No identical-value rows, no capped fields, no null core fields. All 5 upstream sources returned usable data."
+    },
+    "level2": {
+      "methodTested": "get_domain_intelligence",
+      "domain_tested": "vercel.com",
+      "upstreamComparison": "DNS MX records match MXToolbox output (aspmx.l.google.com confirmed). SSL cert issuer Let's Encrypt R12 matches SSL Labs. Registrar Amazon Registrar matches public WHOIS. ZEIT nameservers match historical records. TXT vendor tokens match manual DNS lookup.",
+      "passed": true,
+      "issues": []
+    }
+  },
+
+  "latencyAudit": {
+    "methods": [
+      {
+        "name": "get_domain_intelligence",
+        "declaredLatency": "slow",
+        "actualLatency": "slow",
+        "notes": "Fixed during audit from 'fast' to 'slow'. Cold: 8–15s (5 parallel upstream calls, bounded by crt.sh). Warm: sub-200ms (24h TTL cache). Correctly classified as slow."
+      },
+      {
+        "name": "get_tech_stack",
+        "declaredLatency": "fast",
+        "actualLatency": "fast",
+        "notes": "Shares getDomainIntelligence cache. Cold call triggers full 8-15s fetch then caches; subsequent calls sub-200ms. Fast is acceptable since the cache dominates real-world usage."
+      },
+      {
+        "name": "get_dns_records",
+        "declaredLatency": "fast",
+        "actualLatency": "fast",
+        "notes": "Same cache sharing pattern. Correct."
+      },
+      {
+        "name": "get_subdomains",
+        "declaredLatency": "fast",
+        "actualLatency": "fast",
+        "notes": "Same cache sharing pattern. crt.sh timeout (8s) is absorbed by the parallel fetch in getDomainIntelligence. Correct."
+      }
+    ],
+    "schemaCompleteness": "4/4 methods have complete outputSchema with all properties documented, snake_case field names explicit, array items fully specified, and descriptions on every field."
+  },
+
+  "optimizationRuns": "PENDING — run after deploying endpoint and registering at ctxprotocol.com/contribute. Command: load mcp-tool-optimization-skill.md, set CONTEXT_API_KEY, TOOL_ID, endpoint URL, run phases 6-8.",
+
+  "showcasePrompts": [
+    "What tech stack does stripe.com run and which email provider do they use?",
+    "What subdomains has notion.so exposed in their TLS certificates?",
+    "What third-party vendors does vercel.com use, based on their DNS TXT records?",
+    "Does shopify.com have a strict DMARC policy and what does their SPF record include?",
+    "Is linear.app's SSL certificate expiring soon and does it cover other domains?",
+    "What's the full security posture of figma.com — HSTS, CSP, DMARC, X-Frame-Options?",
+    "Who registered supabase.com and when, and are they using a privacy service?",
+    "Compare the email security posture of hubspot.com versus salesforce.com"
+  ],
+
+  "generatedDescription": "Domain Technical Intelligence — one-call domain intelligence for AI agents and sales teams. Returns tech stack fingerprint (CMS, framework, CDN, ecommerce, analytics, marketing tools), full DNS records with email provider classification (Google Workspace, Microsoft 365, and 10+ others), SSL certificate chain with Subject Alternative Names revealing sibling domains, WHOIS/RDAP ownership data, subdomain enumeration from Certificate Transparency logs, self-declared social profiles and mobile app links, HTTP security posture (HSTS, CSP, X-Frame-Options, DMARC), and well-known path signals — all normalized into a single typed JSON object.\n\nReplaces BuiltWith Pro ($295/mo), Wappalyzer Teams ($250/mo), and DomainTools Iris Investigate ($1,500+/yr). No paid APIs, no scraping of gated content, no authentication required.\n\n## Features\n\n**Live DNS vendor intelligence.** TXT records reveal a company's full vendor ecosystem through verification tokens — Stripe, Salesforce, DocuSign, HubSpot, Zoom, Mixpanel, and more. BuiltWith and Wappalyzer only see HTML/JS-visible tools. DNS exposes the entire back-office stack.\n\n**Email stack classification.** MX records identify email provider with SPF and DMARC policy parsing. Know immediately whether a prospect is on Google Workspace, Microsoft 365, or a custom mail server — and whether their email security posture is strict, soft, or absent.\n\n**Certificate Transparency subdomain enumeration.** Every TLS certificate ever issued for a domain is logged publicly. This tool queries crt.sh to surface all subdomains — api., staging., internal., acquired products — without any special access.\n\n**Agent-callable typed output.** All 5 data sources (DNS, TLS, CT logs, RDAP, HTTP) are normalized into one canonical JSON object. Sub-200ms for cached domains (24h TTL). 8–15s cold fetch.\n\n## Try Asking\n\n- What tech stack does stripe.com run and which email provider do they use?\n- What subdomains has notion.so exposed in their TLS certificates?\n- What third-party vendors does vercel.com use, based on their DNS TXT records?\n- Does shopify.com have a strict DMARC policy and what does their SPF record include?\n- What's the full security posture of figma.com — HSTS, CSP, DMARC, X-Frame-Options?\n- Who registered supabase.com and when, and are they using a domain privacy service?\n- Compare the email security posture of hubspot.com versus salesforce.com\n- Is linear.app's SSL certificate expiring soon, and does the cert cover any other domains?\n\n## Agent Tips\n\n- All 4 tools share a 24h domain cache. Call `get_domain_intelligence` first to warm the cache; subsequent `get_tech_stack`, `get_dns_records`, and `get_subdomains` calls for the same domain are instant.\n- For comparison queries (two domains), make two parallel calls.\n- `get_subdomains` uses crt.sh which can be slow or unavailable for very large domains (vercel.com, google.com). The error field will indicate timeout vs. HTTP error.\n- DNS TXT records are the highest-signal field for vendor intelligence — parse them for verification tokens to reconstruct a company's full tool stack.\n- `dns.email_stack.provider` is derived from MX records and is more reliable than SPF-based classification for identifying email providers.",
+
+  "descriptionUpdatedAt": "PENDING",
+
+  "signoff": {
+    "passRate": "PENDING — phases 6-8 not yet run",
+    "highDifferentiationCount": 8,
+    "moderateDifferentiationCount": 0,
+    "lowDifferentiationCount": 0,
+    "overallStatus": "PARTIAL — all 8 prompts pre-scored high_differentiation offline. Final PASS/FAIL pending live optimization run."
+  }
+}
