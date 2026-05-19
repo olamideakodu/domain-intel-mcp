@@ -106,7 +106,7 @@ app.use((req, _res, next) => {
 });
 
 // Context Protocol middleware — guards tools/call with JWT verification
-// app.use("/mcp", createContextMiddleware());
+app.use("/mcp", createContextMiddleware());
 
 // ── SSE sessions ───────────────────────────────────────────────────────────
 
