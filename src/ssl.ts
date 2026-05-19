@@ -127,19 +127,49 @@ interface CrtShEntry {
   issuer_name: string;
 }
 
+// crt.sh returns 502/503 under load — transient errors that resolve in 1-2s.
+// Retry up to 3 attempts with short backoff on 5xx.
+// Do NOT retry on AbortError (timeout) — those mean the domain has too many
+// certificates and a retry will hit the same timeout.
+async function crtShFetch(url: string, maxAttempts = 3): Promise<CrtShEntry[]> {
+  let lastError = "";
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(8_000),
+        headers: { "Accept": "application/json" },
+      });
+
+      if (res.status >= 500) {
+        lastError = `crt.sh HTTP ${res.status}`;
+        if (attempt < maxAttempts) {
+          await new Promise(r => setTimeout(r, attempt * 800)); // 800ms, 1600ms
+          continue;
+        }
+        throw new Error(lastError);
+      }
+
+      if (!res.ok) throw new Error(`crt.sh HTTP ${res.status}`);
+      return await res.json() as CrtShEntry[];
+
+    } catch (err) {
+      const isAbort = err instanceof Error && err.name === "AbortError";
+      if (isAbort) throw new Error("crt.sh timeout — domain may have too many certificates");
+      lastError = err instanceof Error ? err.message : String(err);
+      if (attempt < maxAttempts) {
+        await new Promise(r => setTimeout(r, attempt * 800));
+        continue;
+      }
+      throw new Error(lastError);
+    }
+  }
+  throw new Error(lastError || "crt.sh fetch failed");
+}
+
 export async function fetchSubdomains(domain: string): Promise<SubdomainResult> {
   try {
     const url = `https://crt.sh/?q=%.${domain}&output=json`;
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(5_000),
-      headers: { "Accept": "application/json" },
-    });
-
-    if (!res.ok) {
-      return { subdomains: [], total_found: 0, first_seen_earliest: null, error: `crt.sh HTTP ${res.status}` };
-    }
-
-    const data = await res.json() as CrtShEntry[];
+    const data = await crtShFetch(url);
 
     // Deduplicate by subdomain name — keep the earliest logged_at for each
     const seen = new Map<string, SubdomainEntry>();
