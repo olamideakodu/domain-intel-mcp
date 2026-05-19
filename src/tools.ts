@@ -162,11 +162,12 @@ const WEB_SCHEMA = {
       items: {
         type: "object",
         properties: {
-          platform: { type: "string", enum: ["ios", "android"] },
-          app_id:   { type: "string" },
-          url:      { type: "string" },
+          platform:  { type: "string", enum: ["ios", "android"] },
+          app_id:    { type: "string", description: "Numeric App Store ID (iOS) or package name (Android)" },
+          bundle_id: { type: ["string", "null"], description: "Bundle ID: com.example.app. Android: same as app_id. iOS: resolved via iTunes API lookup." },
+          url:       { type: "string" },
         },
-        required: ["platform", "app_id", "url"],
+        required: ["platform", "app_id", "bundle_id", "url"],
       },
     },
     security: {

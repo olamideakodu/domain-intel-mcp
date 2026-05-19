@@ -226,19 +226,45 @@ function extractSocialProfiles(html: string): SocialProfile[] {
 
 // ── Mobile app link extraction ────────────────────────────────────────────
 
-function extractMobileApps(html: string): MobileApp[] {
+async function resolveIosBundleId(numericId: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://itunes.apple.com/lookup?id=${numericId}&entity=software`,
+      { signal: AbortSignal.timeout(4_000) }
+    );
+    if (!res.ok) return null;
+    const data = await res.json() as { results?: Array<{ bundleId?: string }> };
+    return data.results?.[0]?.bundleId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function extractMobileApps(html: string): Promise<MobileApp[]> {
   const apps: MobileApp[] = [];
 
   // iOS App Store
   const iosMatch = html.match(/https?:\/\/apps\.apple\.com\/[a-z]{2}\/app\/[^/"?\s]+\/id(\d+)/i);
   if (iosMatch) {
-    apps.push({ platform: "ios", app_id: iosMatch[1], url: iosMatch[0].split(/['">\s]/)[0] });
+    const numericId = iosMatch[1];
+    const bundleId  = await resolveIosBundleId(numericId);
+    apps.push({
+      platform:  "ios",
+      app_id:    numericId,
+      bundle_id: bundleId,
+      url:       iosMatch[0].split(/['">\s]/)[0],
+    });
   }
 
-  // Android Google Play
+  // Android Google Play — package name IS the bundle ID
   const androidMatch = html.match(/https?:\/\/play\.google\.com\/store\/apps\/details\?id=([A-Za-z0-9_.]+)/i);
   if (androidMatch) {
-    apps.push({ platform: "android", app_id: androidMatch[1], url: androidMatch[0].split(/['">\s]/)[0] });
+    apps.push({
+      platform:  "android",
+      app_id:    androidMatch[1],
+      bundle_id: androidMatch[1], // package name = bundle ID on Android
+      url:       androidMatch[0].split(/['">\s]/)[0],
+    });
   }
 
   return apps;
@@ -360,7 +386,7 @@ async function buildScrapeResult(
   const tech      = buildTechSummary(detected, emailProvider);
   const security  = extractHttpSecurity(headers, isHttps);
   const social    = extractSocialProfiles(html);
-  const apps      = extractMobileApps(html);
+  const apps      = await extractMobileApps(html);
   const wellKnown = await checkWellKnown(`https://${domain}`);
 
   return {

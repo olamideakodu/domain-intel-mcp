@@ -136,6 +136,7 @@ export interface SocialProfile {
 export interface MobileApp {
   platform: "ios" | "android";
   app_id: string;
+  bundle_id: string | null; // iOS: com.example.app via iTunes lookup. Android: same as app_id (package name IS the bundle ID).
   url: string;
 }
 

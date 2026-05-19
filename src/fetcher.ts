@@ -5,9 +5,9 @@ import { fetchSsl, fetchSubdomains } from "./ssl.js";
 import { fetchOwnership } from "./rdap.js";
 import { scrapeWeb } from "./scraper.js";
 
-const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours — domain data changes slowly
+const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-const cache = new Cache<DomainIntelligence>();
+const cache = new Cache<DomainIntelligence>(TTL_MS);
 
 // ── Domain normalisation ───────────────────────────────────────────────────
 
@@ -102,7 +102,7 @@ export async function getDomainIntelligence(rawInput: string): Promise<DomainInt
     latency_ms:  Date.now() - t0,
   };
 
-  cache.set(domain, intel, TTL_MS);
+  cache.set(domain, intel);
   return intel;
 }
 
