@@ -153,8 +153,12 @@ async function crtShFetch(url: string, maxAttempts = 3): Promise<CrtShEntry[]> {
       return await res.json() as CrtShEntry[];
 
     } catch (err) {
-      const isAbort = err instanceof Error && err.name === "AbortError";
-      if (isAbort) throw new Error("crt.sh timeout — domain may have too many certificates");
+      // AbortSignal.timeout() throws name:"TimeoutError" in Node 17.3+ and
+      // name:"AbortError" in older versions. Either way: do not retry — the
+      // query is too slow and another attempt will hit the same timeout.
+      const isTimeout = err instanceof Error &&
+        (err.name === "AbortError" || err.name === "TimeoutError");
+      if (isTimeout) throw new Error("crt.sh timeout — domain may have too many certificates");
       lastError = err instanceof Error ? err.message : String(err);
       if (attempt < maxAttempts) {
         await new Promise(r => setTimeout(r, attempt * 800));
