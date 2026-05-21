@@ -1,4 +1,4 @@
-import type { DomainIntelligence } from "./types.js";
+import type { DomainIntelligence, SubdomainResult } from "./types.js";
 import { Cache } from "./cache.js";
 import { resolveDns } from "./dns.js";
 import { fetchSsl, fetchSubdomains } from "./ssl.js";
@@ -50,7 +50,9 @@ export async function getDomainIntelligence(rawInput: string): Promise<DomainInt
         san_domains: [], wildcard: false, key_bits: null,
         protocols_supported: [], error: "SSL fetch failed",
       })),
-      fetchSubdomains(domain).catch(() => ({
+      // Both CT log sources race in parallel (crt.sh + CertSpotter).
+      // 8s timeout — first success wins, doesn't block the other signals.
+      fetchSubdomains(domain, { timeoutMs: 8_000 }).catch(() => ({
         subdomains: [], total_found: 0, first_seen_earliest: null, error: "crt.sh lookup failed",
       })),
       fetchOwnership(domain).catch(() => ({
@@ -117,4 +119,42 @@ export async function getDomainIntelligence(rawInput: string): Promise<DomainInt
 
 export function getCacheSize(): number {
   return cache.size();
+}
+
+// ── Dedicated subdomain fetch for the get_subdomains tool ─────────────────
+// Uses a 20s timeout and the full historical crt.sh corpus (no excludeExpired).
+// If the domain was already fully fetched via getDomainIntelligence, returns
+// the cached result immediately. Otherwise performs a dedicated long-timeout fetch.
+
+export async function getSubdomainsDirectly(rawInput: string): Promise<{
+  domain: string;
+  subdomains: SubdomainResult;
+  data_freshness: string;
+}> {
+  const domain = normalizeDomain(rawInput);
+  if (!domain || domain.length < 3) throw new Error(`Invalid domain: "${rawInput}"`);
+
+  // Cache hit — return subdomains from the full cached intel object
+  const cached = cache.get(domain);
+  if (cached) {
+    return {
+      domain,
+      subdomains:     cached.subdomains,
+      data_freshness: cached.data_freshness,
+    };
+  }
+
+  // No cache — dedicated fetch with 20s timeout, both CT sources racing
+  const subdomains = await fetchSubdomains(domain, { timeoutMs: 20_000 }).catch(err => ({
+    subdomains:            [],
+    total_found:           0,
+    first_seen_earliest:   null,
+    error: err instanceof Error ? err.message : String(err),
+  } as SubdomainResult));
+
+  return {
+    domain,
+    subdomains,
+    data_freshness: new Date().toISOString(),
+  };
 }

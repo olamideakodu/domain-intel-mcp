@@ -5,7 +5,7 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprot
 import { createContextMiddleware } from "@ctxprotocol/sdk";
 
 import { TOOLS } from "./tools.js";
-import { getDomainIntelligence, normalizeDomain, getCacheSize } from "./fetcher.js";
+import { getDomainIntelligence, getSubdomainsDirectly, normalizeDomain, getCacheSize } from "./fetcher.js";
 import { ENV } from "./env.js";
 
 // ── Logger ─────────────────────────────────────────────────────────────────
@@ -21,9 +21,14 @@ const log = {
 async function handleTool(name: string, args: Record<string, unknown>) {
   const domain = normalizeDomain((args.domain ?? "") as string);
 
-  // All 4 tools pull from the same getDomainIntelligence cache.
-  // The first call for a domain pays the 8–15s cold penalty; subsequent
-  // tool calls for the same domain are sub-millisecond cache reads.
+  // get_subdomains has its own dedicated fetch path with a 20s timeout
+  // and the full historical crt.sh corpus. Route it before the full intel fetch.
+  if (name === "get_subdomains") {
+    return await getSubdomainsDirectly(domain);
+  }
+
+  // The other three tools share the getDomainIntelligence cache.
+  // First call pays the cold fetch penalty; subsequent calls are cache reads.
   const intel = await getDomainIntelligence(domain);
 
   switch (name) {
@@ -41,13 +46,6 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       return {
         domain:         intel.domain,
         dns:            intel.dns,
-        data_freshness: intel.data_freshness,
-      };
-
-    case "get_subdomains":
-      return {
-        domain:         intel.domain,
-        subdomains:     intel.subdomains,
         data_freshness: intel.data_freshness,
       };
 
